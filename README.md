@@ -14,8 +14,8 @@ The requirements come from the assignment PDF in this repository ([assignment/Ta
 
 ## Contents
 
-1. [Quick start](#quick-start)
-2. [Solution structure](#solution-structure)
+1. [Quick start](#quick-start) (including [verification steps](#verification-steps))
+2. [Solution structure](#solution-structure) and [technology choices](#technology-choices)
 3. [Database design](#database-design)
 4. [Soft delete](#soft-delete)
 5. [License validity and the required scenarios](#license-validity-and-the-required-scenarios)
@@ -69,13 +69,38 @@ In Development, the API applies any pending EF Core migrations at startup and se
 
 The same database can be built with plain SQL; see [Database scripts](#database-scripts).
 
-### Build and test
+### Verification steps
+
+From a clean checkout, with Node.js and the .NET SDK on `PATH`:
 
 ```bash
+dotnet restore
 dotnet build CandidateAssessment.sln
-dotnet test backend/Candidate.API.Tests        # 48 tests
-cd frontend/React.UI && npm run build          # type-checks (tsc) and builds
+dotnet test backend/Candidate.API.Tests
+cd frontend/React.UI
+npm ci
+npm run build
 ```
+
+Then confirm both applications start (two terminals):
+
+```bash
+dotnet run --project backend/Candidate.API
+```
+
+```bash
+cd frontend/React.UI
+npm run dev
+```
+
+Expected results:
+
+- The solution build succeeds for `Candidate.API`, `Candidate.API.Tests` and `React.UI` with no warnings, and all 48 tests pass.
+- `npm run build` type-checks the UI (`tsc`) and produces `dist/`.
+- The API stays running with no startup exception. In Development, Swagger UI (http://localhost:5264/swagger) lists the provider, report, audit, lookup and dashboard operations.
+- The React development server stays running. http://localhost:5173 shows the provider list loaded from the API (12 providers; the 2 soft-deleted ones are not listed).
+- Solution Explorer shows three projects: `Candidate.API`, `Candidate.API.Tests` (under `backend`) and `React.UI` (under `frontend`).
+- Starting the apps does not modify any tracked file (the committed database is only read until data is changed).
 
 ---
 
@@ -112,6 +137,18 @@ assignment/            Assignment PDF
 - `Domain/LicenseRules.cs` has no dependencies.
 
 The point to split is when a second host appears (for example a background job that needs the same services), or when the domain grows.
+
+### Technology choices
+
+| Choice | Why |
+| --- | --- |
+| **.NET 8**, ASP.NET Core Web API with controllers | Matches the starter (`net8.0`). Controllers with `[ApiController]` give automatic model validation and RFC 7807 problem responses. |
+| **EF Core 8.0.32** with the SQLite provider, plus the local `dotnet-ef` tool (`.config/dotnet-tools.json`) | Required by the assignment. Pinning the tool means everyone generates migrations with the same version. |
+| **React 19 with TypeScript** (converted from the starter's JavaScript) | The typed API contract in `src/api/types.ts` mirrors the C# records, so a mismatch between UI and API is a build error rather than a runtime bug. |
+| **react-router 7** | Every page and filter has its own URL (e.g. `/providers?status=Active&county=Fulton`, `/reports?view=expired`), so views can be bookmarked and the back button works. |
+| **Vite dev proxy** | The UI calls the API on its own origin; no CORS setup or hard-coded host is needed in development (details [below](#how-the-react-ui-communicates-with-the-api)). |
+| **No UI component or charting library** | The screens need tables, forms, a dialog and two small bar charts, which plain React and CSS cover. That means fewer dependencies to maintain and full control over accessibility. The styling is a skeuomorphic theme (paper panels, raised buttons, inset fields) built only from CSS gradients and shadows. |
+| **xUnit**, `WebApplicationFactory`, `FakeTimeProvider`, real SQLite in memory | Tests run against the real database engine and migrations (constraints and triggers included) and against the real HTTP pipeline, with a controllable clock for the date rules. |
 
 **Commands vs queries.** `ProviderService` changes data. `ProviderQueryService`, `ReportService` and `DashboardService` only read, using `AsNoTracking` and projections straight into DTOs. `AuditService` is the only class allowed to see soft-deleted rows.
 
@@ -155,6 +192,16 @@ erDiagram
         TEXT DeleteReason
     }
 ```
+
+**Data dictionary mapping.** Every field from the assignment's data dictionary is present. Two are named more precisely:
+
+| Data dictionary | Column | Note |
+| --- | --- | --- |
+| Provider.ProviderId, ProviderName, County, Status | same names | `Status` is limited to Active / Inactive / Pending |
+| Provider.CreatedDate | `CreatedAtUtc` | A full UTC timestamp rather than a date, so audit records are precise. |
+| License.LicenseId, ProviderId, LicenseNumber, LicenseStatus, ExpirationDate | same names | `LicenseStatus` is limited to Active / Expired / Suspended |
+| *(added)* | `IssuedDate` on License | Optional; constrained to be on or before `ExpirationDate` |
+| *(added)* | `ModifiedAtUtc/By`, `Version`, `IsDeleted`, `DeletedAtUtc/By`, `DeleteReason` on both tables | Audit trail, concurrency and soft delete, described below |
 
 | Decision | Reason |
 | --- | --- |
