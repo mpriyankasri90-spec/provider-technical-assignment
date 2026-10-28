@@ -51,7 +51,7 @@ export function BarList({ title, description, rows, noun }: BarListProps) {
                 </th>
                 <td className="bar-cell" aria-hidden="true">
                   <div className="bar-track">
-                    <div className="bar" style={{ width: `${(row.value / max) * 100}%`, background: row.color }} />
+                    <div className="bar" style={{ width: `${(row.value / max) * 100}%`, backgroundColor: row.color }} />
                   </div>
                   <span className="bar-tooltip" role="tooltip">
                     {row.label}: {row.value} {noun}
