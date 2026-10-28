@@ -83,6 +83,7 @@ public sealed class ProvidersApiTests(ApiFactory factory) : ApiTestBase(factory)
         var duplicate = await Client.PostAsJsonAsync("/api/providers",
             new { providerName = name.ToUpperInvariant(), county = "cobb", status = "Active" });
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+        Assert.Equal("duplicate_provider", (await ReadProblemAsync(duplicate)).Extensions["code"]?.ToString());
 
         // The same name in another county is a different provider.
         await CreateProviderAsync(name, county: "Henry");
@@ -103,6 +104,7 @@ public sealed class ProvidersApiTests(ApiFactory factory) : ApiTestBase(factory)
 
         var stale = await Client.PutAsJsonAsync($"/api/providers/{created.ProviderId}", update);
         Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        Assert.Equal("concurrency_conflict", (await ReadProblemAsync(stale)).Extensions["code"]?.ToString());
     }
 
     [Fact]

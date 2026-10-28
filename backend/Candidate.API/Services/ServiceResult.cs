@@ -6,7 +6,16 @@ public enum ServiceErrorKind
     Conflict
 }
 
-public sealed record ServiceError(ServiceErrorKind Kind, string Message);
+/// <summary>Stable, machine-readable error codes returned to clients as the problem "code" extension.</summary>
+public static class ErrorCodes
+{
+    public const string NotFound = "not_found";
+    public const string DuplicateProvider = "duplicate_provider";
+    public const string ConcurrencyConflict = "concurrency_conflict";
+    public const string DataIntegrity = "data_integrity";
+}
+
+public sealed record ServiceError(ServiceErrorKind Kind, string Code, string Message);
 
 /// <summary>
 /// Outcome of a business operation. Expected failures (not found, rule conflicts) are values,
@@ -20,8 +29,12 @@ public class ServiceResult
     public bool IsSuccess => Error is null;
 
     public static ServiceResult Success() => new(null);
-    public static ServiceResult NotFound(string message) => new(new ServiceError(ServiceErrorKind.NotFound, message));
-    public static ServiceResult Conflict(string message) => new(new ServiceError(ServiceErrorKind.Conflict, message));
+
+    public static ServiceResult NotFound(string message) =>
+        new(new ServiceError(ServiceErrorKind.NotFound, ErrorCodes.NotFound, message));
+
+    public static ServiceResult Conflict(string code, string message) =>
+        new(new ServiceError(ServiceErrorKind.Conflict, code, message));
 }
 
 public sealed class ServiceResult<T> : ServiceResult
@@ -31,6 +44,10 @@ public sealed class ServiceResult<T> : ServiceResult
     public T? Value { get; }
 
     public static ServiceResult<T> Success(T value) => new(value, null);
-    public static new ServiceResult<T> NotFound(string message) => new(default, new ServiceError(ServiceErrorKind.NotFound, message));
-    public static new ServiceResult<T> Conflict(string message) => new(default, new ServiceError(ServiceErrorKind.Conflict, message));
+
+    public static new ServiceResult<T> NotFound(string message) =>
+        new(default, new ServiceError(ServiceErrorKind.NotFound, ErrorCodes.NotFound, message));
+
+    public static new ServiceResult<T> Conflict(string code, string message) =>
+        new(default, new ServiceError(ServiceErrorKind.Conflict, code, message));
 }

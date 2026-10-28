@@ -1,3 +1,4 @@
+using Candidate.API.Services;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -17,13 +18,15 @@ public sealed class DatabaseExceptionHandler(
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        var (title, detail) = exception switch
+        var (code, title, detail) = exception switch
         {
             DbUpdateConcurrencyException =>
-                ("Concurrency conflict", "The record was changed or deleted by someone else. Reload it and try again."),
+                (ErrorCodes.ConcurrencyConflict, "Concurrency conflict",
+                    "The record was changed or deleted by someone else. Reload it and try again."),
             DbUpdateException { InnerException: SqliteException { SqliteErrorCode: SqliteConstraintError } } =>
-                ("Data integrity conflict", "The change conflicts with existing data (for example a duplicate value)."),
-            _ => (null, null)
+                (ErrorCodes.DataIntegrity, "Data integrity conflict",
+                    "The change conflicts with existing data (for example a duplicate value)."),
+            _ => (null, null, null)
         };
 
         if (title is null)
@@ -42,7 +45,8 @@ public sealed class DatabaseExceptionHandler(
             {
                 Status = StatusCodes.Status409Conflict,
                 Title = title,
-                Detail = detail
+                Detail = detail,
+                Extensions = { ["code"] = code }
             }
         });
     }

@@ -81,6 +81,7 @@ public sealed class AuditService(AppDbContext db, ILogger<AuditService> logger)
         if (duplicateExists)
         {
             return ServiceResult.Conflict(
+                ErrorCodes.DuplicateProvider,
                 $"Cannot restore: a provider named '{provider.ProviderName}' already exists in {provider.County} County.");
         }
 

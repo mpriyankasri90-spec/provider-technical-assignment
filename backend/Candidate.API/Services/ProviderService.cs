@@ -19,7 +19,7 @@ public sealed class ProviderService(AppDbContext db, ProviderQueryService querie
 
         if (await IsDuplicateAsync(name, county, excludeProviderId: null, cancellationToken))
         {
-            return ServiceResult<ProviderDetailDto>.Conflict(DuplicateMessage(name, county));
+            return ServiceResult<ProviderDetailDto>.Conflict(ErrorCodes.DuplicateProvider, DuplicateMessage(name, county));
         }
 
         var provider = new Provider
@@ -47,7 +47,7 @@ public sealed class ProviderService(AppDbContext db, ProviderQueryService querie
 
         if (provider.Version != request.Version)
         {
-            return ServiceResult<ProviderDetailDto>.Conflict(StaleMessage);
+            return ServiceResult<ProviderDetailDto>.Conflict(ErrorCodes.ConcurrencyConflict, StaleMessage);
         }
 
         var name = Normalize(request.ProviderName);
@@ -55,7 +55,7 @@ public sealed class ProviderService(AppDbContext db, ProviderQueryService querie
 
         if (await IsDuplicateAsync(name, county, providerId, cancellationToken))
         {
-            return ServiceResult<ProviderDetailDto>.Conflict(DuplicateMessage(name, county));
+            return ServiceResult<ProviderDetailDto>.Conflict(ErrorCodes.DuplicateProvider, DuplicateMessage(name, county));
         }
 
         provider.ProviderName = name;
@@ -83,7 +83,7 @@ public sealed class ProviderService(AppDbContext db, ProviderQueryService querie
 
         if (expectedVersion is not null && provider.Version != expectedVersion)
         {
-            return ServiceResult.Conflict(StaleMessage);
+            return ServiceResult.Conflict(ErrorCodes.ConcurrencyConflict, StaleMessage);
         }
 
         provider.DeleteReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
