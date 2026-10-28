@@ -14,11 +14,18 @@ namespace Candidate.API.Domain;
 /// </summary>
 public static class LicenseRules
 {
+    // Expression forms: translated to SQL by EF Core. Keep in step with the in-memory forms below.
     public static Expression<Func<License, bool>> IsExpired(DateOnly today) =>
         l => l.ExpirationDate < today;
 
     public static Expression<Func<License, bool>> IsCurrentlyValid(DateOnly today) =>
         l => l.LicenseStatus == LicenseStatus.Active && l.ExpirationDate >= today;
+
+    // In-memory forms: used when mapping already-loaded licenses.
+    public static bool IsExpiredOn(DateOnly expirationDate, DateOnly today) => expirationDate < today;
+
+    public static bool IsCurrentlyValidOn(LicenseStatus recorded, DateOnly expirationDate, DateOnly today) =>
+        recorded == LicenseStatus.Active && expirationDate >= today;
 
     public static LicenseStatus GetEffectiveStatus(LicenseStatus recorded, DateOnly expirationDate, DateOnly today)
     {
@@ -27,6 +34,6 @@ public static class LicenseRules
             return LicenseStatus.Suspended;
         }
 
-        return expirationDate < today ? LicenseStatus.Expired : recorded;
+        return IsExpiredOn(expirationDate, today) ? LicenseStatus.Expired : recorded;
     }
 }
