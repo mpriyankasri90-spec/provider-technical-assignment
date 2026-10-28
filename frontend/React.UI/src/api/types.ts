@@ -94,3 +94,32 @@ export interface Lookups {
   licenseStatuses: LicenseStatus[]
   counties: string[]
 }
+
+/** Dashboard metrics; every figure is computed by the API. */
+export interface DashboardSummary {
+  asOfDate: string
+  expiringWithinDays: number
+  providers: {
+    total: number
+    activeWithExpiredLicenses: number
+    deleted: number
+    byStatus: { status: ProviderStatus; count: number }[]
+  }
+  licenses: {
+    total: number
+    currentlyValid: number
+    expired: number
+    suspended: number
+  }
+  expiringLicenses: ExpiringLicense[]
+}
+
+export interface ExpiringLicense {
+  providerId: number
+  providerName: string
+  providerStatus: ProviderStatus
+  licenseId: number
+  licenseNumber: string
+  expirationDate: string
+  daysUntilExpiration: number
+}

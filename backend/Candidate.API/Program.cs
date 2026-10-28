@@ -15,6 +15,7 @@ builder.Services.AddScoped<ProviderQueryService>();
 builder.Services.AddScoped<ProviderService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<AuditService>();
+builder.Services.AddScoped<DashboardService>();
 
 builder.Services.AddControllers(options =>
         // Required fields are declared explicitly with [Required] on the request contracts.

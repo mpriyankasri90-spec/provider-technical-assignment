@@ -1,5 +1,6 @@
 import { BrowserRouter, Link, Navigate, NavLink, Outlet, Route, Routes } from 'react-router'
 import { DeletedProvidersPage } from './features/audit/DeletedProvidersPage'
+import { DashboardPage } from './features/dashboard/DashboardPage'
 import { ProviderDetailPage } from './features/providers/ProviderDetailPage'
 import { ProviderFormPage } from './features/providers/ProviderFormPage'
 import { ProviderListPage } from './features/providers/ProviderListPage'
@@ -17,6 +18,7 @@ function Layout() {
           <nav aria-label="Main">
             <NavLink to="/providers">Providers</NavLink>
             <NavLink to="/reports">License reports</NavLink>
+            <NavLink to="/dashboard">Dashboard</NavLink>
             <NavLink to="/audit/deleted-providers">Deleted providers</NavLink>
           </nav>
         </div>
@@ -47,6 +49,7 @@ export default function App() {
           <Route path="providers/:id" element={<ProviderDetailPage />} />
           <Route path="providers/:id/edit" element={<ProviderFormPage />} />
           <Route path="reports" element={<LicenseReportsPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="audit/deleted-providers" element={<DeletedProvidersPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

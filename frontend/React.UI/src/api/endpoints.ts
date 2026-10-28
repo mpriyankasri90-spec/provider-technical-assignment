@@ -1,5 +1,6 @@
 import { request, toQueryString } from './client'
 import type {
+  DashboardSummary,
   DeletedProvider,
   Lookups,
   PagedResult,
@@ -43,4 +44,9 @@ export const auditApi = {
 
 export const lookupsApi = {
   get: (signal?: AbortSignal) => request<Lookups>('/api/lookups', { signal }),
+}
+
+export const dashboardApi = {
+  summary: (expiringWithinDays: number, signal?: AbortSignal) =>
+    request<DashboardSummary>(`/api/dashboard/summary${toQueryString({ expiringWithinDays })}`, { signal }),
 }

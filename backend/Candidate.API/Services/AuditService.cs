@@ -29,6 +29,9 @@ public sealed class AuditService(AppDbContext db, ILogger<AuditService> logger)
                 p.Licenses.Count(l => !l.IsDeleted)))
             .ToListAsync(cancellationToken);
 
+    public Task<int> CountDeletedProvidersAsync(CancellationToken cancellationToken) =>
+        db.Providers.IgnoreQueryFilters().CountAsync(p => p.IsDeleted, cancellationToken);
+
     /// <summary>Full record of any provider, deleted or not, with all licenses including deleted ones.</summary>
     public async Task<ProviderAuditDto?> GetProviderAsync(int providerId, CancellationToken cancellationToken)
     {
