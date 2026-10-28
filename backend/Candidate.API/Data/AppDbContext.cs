@@ -1,11 +1,21 @@
 using Candidate.API.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Candidate.API.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext : DbContext
 {
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+        // EF normally applies delete rules the moment Remove() is called, which throws for a
+        // provider whose licenses are loaded (the relationship is Restrict). Deferring them to
+        // SaveChanges lets SoftDeleteInterceptor turn the delete into an update first.
+        ChangeTracker.CascadeDeleteTiming = CascadeTiming.OnSaveChanges;
+        ChangeTracker.DeleteOrphansTiming = CascadeTiming.OnSaveChanges;
+    }
+
     public DbSet<Provider> Providers => Set<Provider>();
     public DbSet<License> Licenses => Set<License>();
 
